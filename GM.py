@@ -25,10 +25,10 @@ def generate_keys(prime_size = 768):
    
     
 def encrypt_gm(mpz_number, pub_key):
-    bits_str = "{0:b}".format(mpz_number)
+    bits_str = "{0:032b}".format(mpz_number)
     
     def encrypt_bit(bit, n):
-        r = random.randint(0, int(n-1))
+        r = mpz(random.randint(0, int(n-1)))
         
         if bit == '1':
             M = 1
@@ -59,14 +59,41 @@ def decrypt_gm(cipher_numbers, priv_key):
     bits_str = ''.join([decrypt_bit(c, sk_gm, n) for c in cipher_numbers])
     return int(bits_str, 2)
     
+def quad_residue(c, priv_key):
+    p, q = priv_key
+    n = p * q
+    sk_gm = (p-1)*(q-1) / 4
+    return jacobi(c, n) and powmod(c, sk_gm, n) == 1
+    
+def encrypt_bit_and(bit, pub_key, size_factor=128):
+    if bit == '1':
+        return [ encrypt_gm(0, pub_key)[0] for i in range(size_factor) ]
+    else:
+        return [ encrypt_gm(random.randint(0,1) , pub_key)[0] \
+                 for i in range(size_factor) ]
+                 
+def decrypt_bit_and(cipher, priv_key, size_factor=128):
+    for c in cipher:
+        if not quad_residue(c, priv_key):
+            return '0'
+    return '1'
+
+             
+def dot_mod(cipher1, cipher2, n):
+    return [ c1 * c2 % n for c1,c2 in zip(cipher1, cipher2) ]
+    
+
+def compare_leq(val1, pub_key2, cipher2):
+    cipher1 = encrypt_gm(val1, pub_key2)
     
     
+           
 #print to_binary(mpz(123))
 #print "{0:b}".format(mpz(123))
 #print bin(mpz(123))
 
 def test_gen_keys(iters = 1):
-    
+    print "test_gen_keys:"
     for i in range(iters):
         print "i= ", i
         keys = generate_keys()
@@ -78,16 +105,18 @@ def test_gen_keys(iters = 1):
     print "test_gen_keys pass"
 
 def test_gm_enc_dec(iters = 1):
+    print "test_gm_enc_dec:"
+    
     keys = generate_keys()
     
     n = keys['pub']
     p, q = keys['priv']
     
-    print n, p, q
+    #print n, p, q
     
     for i in range(iters):       
         num = mpz(random.randint(0, 2**31))
-        print "i= ", i, "num = ", num
+        #print "i= ", i, "num = ", num
         cipher = encrypt_gm(num, n)
         
         # ReEncryption
@@ -103,9 +132,9 @@ def test_gm_enc_dec(iters = 1):
         
  
 def test_gm_homo(iters = 1):
-
+    print "test_gm_homo:"
     for i in range(iters):
-        print "i = ", i
+        #print "i = ", i
         keys = generate_keys()
         
         n = keys['pub']
@@ -126,18 +155,48 @@ def test_gm_homo(iters = 1):
         
         
     print "test_gm_homo pass"
-                
+
+def test_gm_bit_and(iters = 1):
+    print "test_gm_bit_and"
+    keys = generate_keys()
+    
+    n = keys['pub']
+    priv = keys['priv']
+    
+    for i in range(iters):
+        print "i=", i
+        cipher0 = encrypt_bit_and('0', n)
+        cipher1 = encrypt_bit_and('1', n)
+        
+        bit0 = decrypt_bit_and(cipher0, priv)
+        bit1 = decrypt_bit_and(cipher1, priv)
+        
+        assert(bit0 == '0')
+        assert(bit1 == '1')
+        
+        # AND
+        # Doesn't work if two ciphertexts are the same.
+        assert(decrypt_bit_and(dot_mod(cipher0, encrypt_bit_and('1', n), n), priv) == '0')
+        assert(decrypt_bit_and(dot_mod(cipher0, encrypt_bit_and('0', n), n), priv) == '0') 
+        assert(decrypt_bit_and(dot_mod(cipher1, encrypt_bit_and('1', n), n), priv) == '1')    
+        
+    print "test_gm_bit_and pass"                  
         
 def test_gm():
-    print "test_gen_keys:"
-    test_gen_keys(iters=10)
-    print "test_gm_enc_dec:"
-    test_gm_enc_dec(iters=10)
-    print "test_gm_homo:"
-    test_gm_homo(iters=10)  
     print "test_gm"
     
+    #test_gen_keys(iters=10)
+    
+    #test_gm_enc_dec(iters=10)
+    
+    #test_gm_homo(iters=10)  
+    
+    test_gm_bit_and(iters=10)
+    
+    print "test_gm pass"
+    
 test_gm()  
+
             
            
     
