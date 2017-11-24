@@ -22,22 +22,30 @@ def generate_keys(prime_size = 768):
      
     keys = {'pub': n, 'priv': (p, q)}
     return keys
+
    
-    
+def encrypt_bit_gm(bit, n):
+    r = mpz(random.randint(0, int(n-1)))
+        
+    if bit == '1' or bit == 1:
+        M = 1
+    elif bit == '0' or bit == 0:
+        M = 0
+    else:
+        return None
+            
+    return r * r * powmod(n-1, M, n) % n
+        
 def encrypt_gm(mpz_number, pub_key):
     bits_str = "{0:032b}".format(mpz_number)
+        
+    return [encrypt_bit_gm(bit, pub_key) for bit in bits_str]
     
-    def encrypt_bit(bit, n):
-        r = mpz(random.randint(0, int(n-1)))
-        
-        if bit == '1':
-            M = 1
-        else:
-            M = 0
-            
-        return r * r * powmod(n-1, M, n) % n
-        
-    return [encrypt_bit(bit, pub_key) for bit in bits_str]
+def decrypt_bit_gm(c, sk_gm, n):
+    if powmod(c, sk_gm, n) == 1:
+        return '0'
+    else:
+        return '1'
     
 def decrypt_gm(cipher_numbers, priv_key):
     p, q = priv_key
@@ -49,14 +57,8 @@ def decrypt_gm(cipher_numbers, priv_key):
         if c >= n or jacobi(c, n) != 1:
             # rejct
             return None
-   
-    def decrypt_bit(c, sk_gm, n):
-        if powmod(c, sk_gm, n) == 1:
-            return '0'
-        else:
-            return '1'
                     
-    bits_str = ''.join([decrypt_bit(c, sk_gm, n) for c in cipher_numbers])
+    bits_str = ''.join([decrypt_bit_gm(c, sk_gm, n) for c in cipher_numbers])
     return int(bits_str, 2)
     
 def quad_residue(c, priv_key):
@@ -67,9 +69,9 @@ def quad_residue(c, priv_key):
     
 def encrypt_bit_and(bit, pub_key, size_factor=128):
     if bit == '1':
-        return [ encrypt_gm(0, pub_key)[0] for i in range(size_factor) ]
+        return [ encrypt_bit_gm(0, pub_key) for i in range(size_factor) ]
     else:
-        return [ encrypt_gm(random.randint(0,1) , pub_key)[0] \
+        return [ encrypt_bit_gm(random.randint(0,1), pub_key) \
                  for i in range(size_factor) ]
                  
 def decrypt_bit_and(cipher, priv_key, size_factor=128):
@@ -81,7 +83,11 @@ def decrypt_bit_and(cipher, priv_key, size_factor=128):
              
 def dot_mod(cipher1, cipher2, n):
     return [ c1 * c2 % n for c1,c2 in zip(cipher1, cipher2) ]
+ 
+ 
+#def embed_bit_and(bit_cipher, bit_and_cipher, pub_key):
     
+       
 
 def compare_leq(val1, pub_key2, cipher2):
     cipher1 = encrypt_gm(val1, pub_key2)
@@ -140,8 +146,8 @@ def test_gm_homo(iters = 1):
         n = keys['pub']
         p, q = keys['priv']
         
-        c0 = encrypt_gm(mpz(0), n)[0]
-        c1 = encrypt_gm(mpz(1), n)[0]
+        c0 = encrypt_bit_gm(0, n)
+        c1 = encrypt_bit_gm(1, n)
         #print c0, c1
        
         # XOR
@@ -164,7 +170,7 @@ def test_gm_bit_and(iters = 1):
     priv = keys['priv']
     
     for i in range(iters):
-        print "i=", i
+        #print "i=", i
         cipher0 = encrypt_bit_and('0', n)
         cipher1 = encrypt_bit_and('1', n)
         
@@ -187,9 +193,9 @@ def test_gm():
     
     #test_gen_keys(iters=10)
     
-    #test_gm_enc_dec(iters=10)
+    test_gm_enc_dec(iters=10)
     
-    #test_gm_homo(iters=10)  
+    test_gm_homo(iters=10)  
     
     test_gm_bit_and(iters=10)
     
