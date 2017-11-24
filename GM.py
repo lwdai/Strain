@@ -3,7 +3,7 @@ import Crypto.Random.random as random
 from gmpy2 import mpz, powmod, isqrt, jacobi, to_binary
 from Crypto.Util.number import getStrongPrime
 
-
+AND_SIZE_FACTOR = 128
 
 def generate_keys(prime_size = 768):
     p = getStrongPrime(prime_size)
@@ -67,14 +67,14 @@ def quad_residue(c, priv_key):
     sk_gm = (p-1)*(q-1) / 4
     return jacobi(c, n) and powmod(c, sk_gm, n) == 1
     
-def encrypt_bit_and(bit, pub_key, size_factor=128):
+def encrypt_bit_and(bit, pub_key, size_factor=AND_SIZE_FACTOR):
     if bit == '1':
         return [ encrypt_bit_gm(0, pub_key) for i in range(size_factor) ]
     else:
         return [ encrypt_bit_gm(random.randint(0,1), pub_key) \
                  for i in range(size_factor) ]
                  
-def decrypt_bit_and(cipher, priv_key, size_factor=128):
+def decrypt_bit_and(cipher, priv_key, size_factor=AND_SIZE_FACTOR):
     for c in cipher:
         if not quad_residue(c, priv_key):
             return '0'
@@ -85,10 +85,12 @@ def dot_mod(cipher1, cipher2, n):
     return [ c1 * c2 % n for c1,c2 in zip(cipher1, cipher2) ]
  
 
-def encrypt_gm_and(mpz_number, pub_key, size_factor=128):
+def encrypt_gm_and(mpz_number, pub_key, size_factor=AND_SIZE_FACTOR):
     bits_str = "{0:032b}".format(mpz_number)
+    
+
  
-def embed_bit_and(bit_cipher, pub_key, size_factor=128):
+def embed_bit_and(bit_cipher, pub_key, size_factor=AND_SIZE_FACTOR):
     def embed(bit_cipher, n):
         if random.randint(0,1) == 1:
             return encrypt_bit_gm(0, n)
@@ -97,10 +99,45 @@ def embed_bit_and(bit_cipher, pub_key, size_factor=128):
            
     return [ embed(bit_cipher, pub_key) for i in range(size_factor) ]
     
-       
 
-def compare_leq(val1, pub_key2, cipher2):
-    cipher1 = encrypt_gm(val1, pub_key2)
+def embed_and(cipher, pub_key, size_factor=AND_SIZE_FACTOR):
+    return [ embed_bit_and(bit_cipher, pub_key, size_factor) \
+             for bit_cipher in cipher ]    
+               
+def gm_eval_honest(number1, cipher2, pub_key2):
+    assert(len(cipher2) == 32)
+    n = pub_key2
+    cipher1 = encrypt_gm(number1, n)
+    
+    neg_cipher1 = map(lambda x: x * (n-1) % n, cipher1)
+    c_neg_xor = dot_mod(neg_cipher1, cipher2, n)
+    
+    cipher1_and = embed_and(cipher1, pub_key2)
+    cipher2_and = embed_and(cipher2, pub_key2)
+    neg_cipher1_and = embed_and(neg_cipher1, pub_key2)
+    c_neg_xor_and = embed_and(c_neg_xor, pub_key2)
+    
+    res = [ ]
+    for l in range(32):
+        temp = dot_mod(cipher2_and[l], neg_cipher1_and[l], n)        
+        for u in range(l):
+            temp = dot_mod(temp, c_neg_xor_and[u], n)
+        res.append(temp)
+    
+    random.shuffle(res)
+    return res
+
+# Returns True if myNumber <= otherNumber     
+def compare_leq_honest(eval_res, priv_key):
+    one_cnt = 0
+    for cipher in eval_res:
+        if decrypt_bit_and(cipher, priv_key) == '1':
+            one_cnt += 1
+        
+    assert(one_cnt <= 1)
+    return one_cnt == 0     
+        
+        
     
     
     
@@ -133,7 +170,7 @@ def test_gm_enc_dec(iters = 1):
     #print n, p, q
     
     for i in range(iters):       
-        num = mpz(random.randint(0, 2**31))
+        num = mpz(random.randint(0, 2**31-1))
         #print "i= ", i, "num = ", num
         cipher = encrypt_gm(num, n)
         
@@ -215,7 +252,24 @@ def test_embed_bit_and(iters=1):
         
     print "test_embed_bit_and pass"
         
+def test_gm_eval_honest(iters=1):
+    print "test_gm_eval_honest"
+    keys = generate_keys()    
+    n = keys['pub']
+    priv_key = keys['priv']  
     
+    for i in range(iters):
+        
+        v1 = mpz(random.randint(0, 2**31-1))
+        v2 = mpz(random.randint(0, 2**31-1))
+        print 'i=',i,'v1=', v1, 'v2=',v2
+        cipher2 = encrypt_gm(v2, n)
+        
+        eval_res = gm_eval_honest(v1, cipher2, n)
+        
+        assert( (v2 <= v1) == compare_leq_honest(eval_res, priv_key) )
+        
+    print "test_gm_eval_honest pass"      
            
 def test_gm():
     print "test_gm"
@@ -228,7 +282,10 @@ def test_gm():
     
     #test_gm_bit_and(iters=10)
     
-    test_embed_bit_and(iters=10)
+    #test_embed_bit_and(iters=10)
+    
+    test_gm_eval_honest(iters=20)
+    
     print "test_gm pass"
     
 test_gm()  
