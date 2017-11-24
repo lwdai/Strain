@@ -84,13 +84,25 @@ def decrypt_bit_and(cipher, priv_key, size_factor=128):
 def dot_mod(cipher1, cipher2, n):
     return [ c1 * c2 % n for c1,c2 in zip(cipher1, cipher2) ]
  
+
+def encrypt_gm_and(mpz_number, pub_key, size_factor=128):
+    bits_str = "{0:032b}".format(mpz_number)
  
-#def embed_bit_and(bit_cipher, bit_and_cipher, pub_key):
+def embed_bit_and(bit_cipher, pub_key, size_factor=128):
+    def embed(bit_cipher, n):
+        if random.randint(0,1) == 1:
+            return encrypt_bit_gm(0, n)
+        else:
+            return encrypt_bit_gm(0, n) * bit_cipher * (n-1) % n
+           
+    return [ embed(bit_cipher, pub_key) for i in range(size_factor) ]
     
        
 
 def compare_leq(val1, pub_key2, cipher2):
     cipher1 = encrypt_gm(val1, pub_key2)
+    
+    
     
     
            
@@ -187,18 +199,36 @@ def test_gm_bit_and(iters = 1):
         assert(decrypt_bit_and(dot_mod(cipher1, encrypt_bit_and('1', n), n), priv) == '1')    
         
     print "test_gm_bit_and pass"                  
+
+def test_embed_bit_and(iters=1):
+    print "test_embed_bit_and"
+    keys = generate_keys()    
+    n = keys['pub']
+    priv_key = keys['priv']
+
+    for i in range(iters):
+        bit = random.randint(0,1)
+        cipher = encrypt_bit_gm(bit, n)
         
+        cipher_and = embed_bit_and(cipher, n)
+        assert(decrypt_bit_and(cipher_and, priv_key) == str(bit))
+        
+    print "test_embed_bit_and pass"
+        
+    
+           
 def test_gm():
     print "test_gm"
     
     #test_gen_keys(iters=10)
     
-    test_gm_enc_dec(iters=10)
+    #test_gm_enc_dec(iters=10)
     
-    test_gm_homo(iters=10)  
+    #test_gm_homo(iters=10)  
     
-    test_gm_bit_and(iters=10)
+    #test_gm_bit_and(iters=10)
     
+    test_embed_bit_and(iters=10)
     print "test_gm pass"
     
 test_gm()  
