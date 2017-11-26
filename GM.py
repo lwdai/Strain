@@ -84,12 +84,6 @@ def decrypt_bit_and(cipher, priv_key, size_factor=AND_SIZE_FACTOR):
 def dot_mod(cipher1, cipher2, n):
     return [ c1 * c2 % n for c1,c2 in zip(cipher1, cipher2) ]
  
-
-def encrypt_gm_and(mpz_number, pub_key, size_factor=AND_SIZE_FACTOR):
-    bits_str = "{0:032b}".format(mpz_number)
-    
-
- 
 def embed_bit_and(bit_cipher, pub_key, size_factor=AND_SIZE_FACTOR):
     def embed(bit_cipher, n):
         if random.randint(0,1) == 1:
