@@ -25,7 +25,7 @@ def generate_keys(prime_size = 768):
 
    
 def encrypt_bit_gm(bit, n):
-    r = mpz(random.randint(0, int(n-1)))
+    r = mpz(random.randint(1, int(n-1)))
         
     if bit == '1' or bit == 1:
         M = 1
@@ -98,23 +98,8 @@ def embed_and(cipher, pub_key, size_factor=AND_SIZE_FACTOR):
     return [ embed_bit_and(bit_cipher, pub_key, size_factor) \
              for bit_cipher in cipher ]    
                
-   
-        
-        
-    
-    
-    
-    
            
 #print to_binary(mpz(123))
 #print "{0:b}".format(mpz(123))
 #print bin(mpz(123))
-
- 
-
-            
-           
-    
-    
-
 

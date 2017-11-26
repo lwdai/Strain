@@ -115,24 +115,4 @@ def verify_dlog_eq(n, y, Y, Z, P_dlog, K=10):
      
         
         
-        
-        
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+   
