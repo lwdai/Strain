@@ -3,7 +3,7 @@ import Crypto.Random.random as random
 from gmpy2 import mpz,jacobi
 from Crypto.Util.number import getStrongPrime
 from GM import generate_keys, encrypt_bit_gm, encrypt_gm, decrypt_bit_gm,\
-    decrypt_gm, encrypt_bit_and, decrypt_bit_and, dot_mod, encrypt_gm_and, \
+    decrypt_gm, encrypt_bit_and, decrypt_bit_and, dot_mod, \
     embed_bit_and, embed_and
     
 def test_gen_keys(iters = 1):
@@ -116,7 +116,7 @@ def test_embed_bit_and(iters=1):
 def test_gm():
     print "test_gm"
     
-    test_gen_keys(iters=2)
+    test_gen_keys(iters=10)
     
     test_gm_enc_dec(iters=10)
     

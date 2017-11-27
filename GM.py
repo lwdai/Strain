@@ -65,7 +65,7 @@ def quad_residue(c, priv_key):
     p, q = priv_key
     n = p * q
     sk_gm = (p-1)*(q-1) / 4
-    return jacobi(c, n) and powmod(c, sk_gm, n) == 1
+    return jacobi(c, n) == 1 and powmod(c, sk_gm, n) == 1
     
 def encrypt_bit_and(bit, pub_key, size_factor=AND_SIZE_FACTOR):
     if bit == '1':
