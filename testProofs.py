@@ -23,6 +23,8 @@ def test_gm_eval_honest(iters=1):
         assert( (v2 <= v1) == compare_leq_honest(eval_res, priv_key) )
         
     print "test_gm_eval_honest pass"
+    
+
 
 def test_dlog_eq(iters=1):
     print "test_dlog_eq:"
