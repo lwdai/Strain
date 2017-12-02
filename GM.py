@@ -42,6 +42,8 @@ def encrypt_gm(mpz_number, pub_key):
     return [encrypt_bit_gm(bit, pub_key) for bit in bits_str]
     
 def decrypt_bit_gm(c, sk_gm, n):
+    #print powmod(c, sk_gm, n) - n
+    #print n
     if powmod(c, sk_gm, n) == 1:
         return '0'
     else:
@@ -75,8 +77,13 @@ def encrypt_bit_and(bit, pub_key, size_factor=AND_SIZE_FACTOR):
                  for i in range(size_factor) ]
                  
 def decrypt_bit_and(cipher, priv_key, size_factor=AND_SIZE_FACTOR):
+    p,q = priv_key
+    sk_gm = (p-1)*(q-1) / 4
+    n = p * q
+    
     for c in cipher:
-        if not quad_residue(c, priv_key):
+        #if not quad_residue(c, priv_key):
+        if decrypt_bit_gm(c, sk_gm, n) == '1':
             return '0'
     return '1'
 

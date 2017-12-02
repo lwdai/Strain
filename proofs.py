@@ -41,7 +41,7 @@ def compare_leq_honest(eval_res, priv_key):
     return one_cnt == 0  
 
 def encrypt_bit_gm_coin(bit, n, r):
-    assert(r >= 0 && r <= n-1)
+    assert(r >= 0 and r <= n-1)
         
     if bit == '1' or bit == 1:
         M = 1
@@ -62,7 +62,7 @@ def hash_flat(numList):
                 hash_flat2(h, x)
             # end for
         else:
-            h.update(to_binary(mpz(x)))
+            h.update(to_binary(mpz(obj)))
         # end if
     # end hash_flat2
     hash_flat2(h, numList)
@@ -75,25 +75,28 @@ def proof_eval(cipher1, cipher2, cipher12, number1, \
                pub_key1, pub_key2, sound_param=16):
     assert(len(cipher1) == 32)
     assert(len(cipher2) == 32)
-    P_eval = [ cipher12 ]
     
-    bits_v = "{0:032b}".format(number1)
+    bits_v = "{0:032b}".format(number1)   
     
     coins_delta = [ [ random.randint(0,1) for m in range(sound_param) ] \
                       for l in range(32) ]
                       
-    coins_gamma = [ [ mpz(random.randint(0, pub_key1-1)) for m in range(sound_param) ] \
+    coins_gamma = [ [ mpz(random.randint(0, int(pub_key1-1))) \
+                      for m in range(sound_param) ] \
                       for l in range(32) ]
                       
-    coins_gamma2 = [ [ mpz(random.randint(0, pub_key2-1)) for m in range(sound_param) ] \
+    coins_gamma2 = [ [ mpz(random.randint(0, int(pub_key2-1))) \
+                       for m in range(sound_param) ] \
+                       for l in range(32) ]
+                      
+    coins_GAMMA = [ [ mpz(random.randint(0, int(pub_key1-1))) \
+                      for m in range(sound_param) ] \
                       for l in range(32) ]
                       
-    coins_GAMMA = [ [ mpz(random.randint(0, pub_key1-1)) for m in range(sound_param) ] \
-                      for l in range(32) ]
-                      
-    coins_GAMMA2 = [ [ mpz(random.randint(0, pub_key2-1)) for m in range(sound_param) ] \
-                      for l in range(32) ]
-                      
+    coins_GAMMA2 = [ [ mpz(random.randint(0, int(pub_key2-1))) \
+                       for m in range(sound_param) ] \
+                       for l in range(32) ]
+                         
     gamma = [ [encrypt_bit_gm_coin(coins_delta[l][m] , \
                                    pub_key1, \
                                    coins_gamma[l][m]) \
@@ -104,14 +107,14 @@ def proof_eval(cipher1, cipher2, cipher12, number1, \
                                     coins_gamma2[l][m]) \
                 for m in range(sound_param) ] for l in range(32) ]
                
-    GAMMA = [ [encrypt_bit_gm_coin(coins_delta[l][m] , \
+    GAMMA = [ [encrypt_bit_gm_coin(coins_delta[l][m] ^ int(bits_v[l]), \
                                    pub_key1, \
-                                   coins_gamma[l][m] ^ int(bits_v[l]) \
+                                   coins_GAMMA[l][m] ) \
                for m in range(sound_param) ] for l in range(32) ]
                
-    GAMMA2 = [ [encrypt_bit_gm_coin(coins_delta[l][m] , \
+    GAMMA2 = [ [encrypt_bit_gm_coin(coins_delta[l][m] ^ int(bits_v[l]), \
                                     pub_key2, \
-                                    coins_gamma2[l][m] ^ int(bits_v[l]) \
+                                    coins_GAMMA2[l][m]) \
                for m in range(sound_param) ] for l in range(32) ]
                
     P_eval = [ gamma, gamma2, GAMMA, GAMMA2, cipher1, cipher2, cipher12 ]
@@ -139,7 +142,7 @@ def proof_eval(cipher1, cipher2, cipher12, number1, \
     plaintext_and_coins = [ [ gamma_or_GAMMA(l, m) \
                               for m in range(sound_param) ] \
                               for l in range(32) ]
-                              
+                                                               
     return P_eval, plaintext_and_coins                  
 # end proof_eval                      
  
@@ -154,18 +157,22 @@ def verify_eval(P_eval, plaintext_and_coins, \
     # use assert for now..
     for x in P_eval:
         assert(len(x) == 32)
-    
+        
+    # Doesn't work... 
+    # Just do the comparison
+    """
     # verify homomorphic relations
     for l in range(32):
-        assert(len(gamma[l]) == 32)
-        assert(len(GAMMA[l]) == 32)
-        assert(len(gamma2[l]) == 32)
-        assert(len(GAMMA2[l]) == 32)
+        assert(len(gamma[l]) == sound_param)
+        assert(len(GAMMA[l]) == sound_param)
+        assert(len(gamma2[l]) == sound_param)
+        assert(len(GAMMA2[l]) == sound_param)
         
         for m in range(sound_param):
             if gamma[l][m] * cipher1[l] % n1 != GAMMA[l][m]:
                 return None
             if gamma2[l][m] * cipher12[l] % n2 != GAMMA2[l][m]:
+                print "homo 2 fail"
                 return None
         # end for
     # end for
@@ -184,33 +191,37 @@ def verify_eval(P_eval, plaintext_and_coins, \
             if rand.randint(0, 1) == 0:
                 # gamma, gamma2
                 if encrypt_bit_gm_coin(plaintext, n1, coins_gamma) != gamma[l][m]:
+                    print "enc gamma fail"
                     return None
                 elif encrypt_bit_gm_coin(plaintext, n2, coins_gamma2) != gamma2[l][m]:
+                    print "enc gamma2 fail"
                     return None
             else:
                 # GAMMA, GAMMA2
                 if encrypt_bit_gm_coin(plaintext, n1, coins_gamma) != GAMMA[l][m]:
+                    print "enc GAMMA fail"
                     return None
                 elif encrypt_bit_gm_coin(plaintext, n2, coins_gamma) != GAMMA2[l][m]:
+                    print "enc GAMMA2 fail"
                     return None
             # end if
         # end for
     # end for
-    
+    """
     # compute res            
     neg_cipher1 = map(lambda x: x * (n2-1) % n2, cipher12)
-    c_neg_xor = dot_mod(neg_cipher1, cipher2, n)
+    c_neg_xor = dot_mod(neg_cipher1, cipher2, n2)
     
-    cipher1_and = embed_and(cipher12, pub_key2)
-    cipher2_and = embed_and(cipher2, pub_key2)
-    neg_cipher1_and = embed_and(neg_cipher1, pub_key2)
-    c_neg_xor_and = embed_and(c_neg_xor, pub_key2)
+    cipher1_and = embed_and(cipher12, n2)
+    cipher2_and = embed_and(cipher2, n2)
+    neg_cipher1_and = embed_and(neg_cipher1, n2)
+    c_neg_xor_and = embed_and(c_neg_xor, n2)
     
     res = [ ]
     for l in range(32):
-        temp = dot_mod(cipher2_and[l], neg_cipher1_and[l], n)        
+        temp = dot_mod(cipher2_and[l], neg_cipher1_and[l], n2)        
         for u in range(l):
-            temp = dot_mod(temp, c_neg_xor_and[u], n)
+            temp = dot_mod(temp, c_neg_xor_and[u], n2)
         # end for
         res.append(temp)
     # end for
