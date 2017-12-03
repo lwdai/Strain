@@ -9,7 +9,6 @@ from GM import generate_keys, encrypt_bit_gm, encrypt_gm, decrypt_bit_gm,\
 def test_gen_keys(iters = 1):
     print "test_gen_keys:"
     for i in range(iters):
-        print "i= ", i
         keys = generate_keys()
             
         n = keys['pub']
@@ -58,7 +57,6 @@ def test_gm_homo(iters = 1):
         assert(decrypt_gm([c0 * c1 % n], keys['priv']) == 1)
         assert(decrypt_gm([c0 * c0 % n], keys['priv']) == 0)
         assert(decrypt_gm([c1 * c1 % n], keys['priv']) == 0)
-        assert(c0 * c1 % n == encrypt_bit_gm(1, n) )
         
         # flip
         assert(decrypt_gm([c0 * (n-1) % n], keys['priv']) == 1)

@@ -93,8 +93,7 @@ def test_dlog_eq(iters=1):
             random.choice([-1, 1])
             
         assert(not verify_dlog_eq(n, y, Y, Z, P_dlog)) 
-    
-    
+        
     print "test_dlog_eq pass"
     
 def test_proofs():
