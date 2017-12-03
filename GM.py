@@ -1,3 +1,6 @@
+# Goldwasser-Micali Encryption and its AND variance
+# Support 32-bit unsigned integers as plaintext
+
 import gmpy2
 import Crypto.Random.random as random
 from gmpy2 import mpz, powmod, isqrt, jacobi, to_binary
@@ -35,20 +38,22 @@ def encrypt_bit_gm(bit, n):
         return None
             
     return r * r * powmod(n-1, M, n) % n
-        
+ 
+# pub_key is just n       
 def encrypt_gm(mpz_number, pub_key):
     bits_str = "{0:032b}".format(mpz_number)
         
     return [encrypt_bit_gm(bit, pub_key) for bit in bits_str]
-    
+ 
+# sk_gm is (p-1)(q-1) / 4   
 def decrypt_bit_gm(c, sk_gm, n):
-    #print powmod(c, sk_gm, n) - n
-    #print n
     if powmod(c, sk_gm, n) == 1:
         return '0'
     else:
         return '1'
-    
+
+# cipher_numbers: ciphertext of a GM encrypted 32-bit unsigned int
+# priv_key = (p, q)            
 def decrypt_gm(cipher_numbers, priv_key):
     p, q = priv_key
     n = p * q
@@ -104,9 +109,5 @@ def embed_bit_and(bit_cipher, pub_key, size_factor=AND_SIZE_FACTOR):
 def embed_and(cipher, pub_key, size_factor=AND_SIZE_FACTOR):
     return [ embed_bit_and(bit_cipher, pub_key, size_factor) \
              for bit_cipher in cipher ]    
-               
-           
-#print to_binary(mpz(123))
-#print "{0:b}".format(mpz(123))
-#print bin(mpz(123))
+         
 

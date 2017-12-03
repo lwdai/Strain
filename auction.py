@@ -420,14 +420,14 @@ def test_auction():
     #test_key_distribution([0,2], num_suppliers=3)
     #test_key_distribution([0,1,2], num_suppliers=3)
     
-    test_key_distribution([0,3], num_suppliers=4)
-    #test_key_distribution([0,3], num_suppliers=5)
+    #test_key_distribution([0,3], num_suppliers=4)
+    test_key_distribution([0,3], num_suppliers=5)
     
     def auction(total_suppliers):
         run_auction([random.randint(0, 2**31 - 1) \
                      for i in range(total_suppliers)])
                      
-    #auction(5)
+    auction(5)
                  
 test_auction()   
                    

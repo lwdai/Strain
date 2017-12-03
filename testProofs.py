@@ -99,8 +99,8 @@ def test_dlog_eq(iters=1):
     
 def test_proofs():
     print "test_proofs:"
-    #test_gm_eval_honest(iters=10)
-    #test_dlog_eq(iters=10)
+    test_gm_eval_honest(iters=10)
+    test_dlog_eq(iters=10)
     test_proof_eval(iters=10)
     print "test_proofs pass"
     

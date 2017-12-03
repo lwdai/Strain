@@ -7,6 +7,9 @@ import collections
 
 import random as rand
 
+# Called by supplier 1, who bids number1
+# Compare number1 vs number2, without revealing number1
+# The result is encrypted with pub_key2, to be decrypted later by supplier 2
 def gm_eval_honest(number1, cipher2, pub_key2):
     assert(len(cipher2) == 32)
     n = pub_key2
@@ -30,7 +33,9 @@ def gm_eval_honest(number1, cipher2, pub_key2):
     random.shuffle(res)
     return res
 
-# Returns True if myNumber <= otherNumber     
+# Called by supplier 2, w.r.t. the document of gm_eval_honest
+# Returns True if myNumber <= otherNumber
+#                 (number2 <= number1)    
 def compare_leq_honest(eval_res, priv_key):
     one_cnt = 0
     for cipher in eval_res:
@@ -40,6 +45,7 @@ def compare_leq_honest(eval_res, priv_key):
     assert(one_cnt <= 1)
     return one_cnt == 0  
 
+# Pass a random number r for "repeatable" encryption
 def encrypt_bit_gm_coin(bit, n, r):
     assert(r >= 0 and r <= n-1)
         
@@ -52,7 +58,7 @@ def encrypt_bit_gm_coin(bit, n, r):
             
     return r * r * powmod(n-1, M, n) % n
     
-    
+# Returns the hash value of a nested list structure    
 def hash_flat(numList):
     h = SHA256.new()
     
@@ -70,7 +76,11 @@ def hash_flat(numList):
 # end hash_flat
      
         
-# j is 1 and i is 2...    
+# j is 1 and i is 2...
+# Called by supplier 1. 
+# Returns a proof to the judge that 
+#   Dec(cipher12, pub_key2) = Dec(cipher1, pub_key1), without revealing plaintexts
+# However the theory doesn't work    
 def proof_eval(cipher1, cipher2, cipher12, number1, \
                pub_key1, pub_key2, sound_param=16):
     assert(len(cipher1) == 32)
@@ -145,8 +155,10 @@ def proof_eval(cipher1, cipher2, cipher12, number1, \
                                                                
     return P_eval, plaintext_and_coins                  
 # end proof_eval                      
- 
-# Return res if pass, or None on failure
+
+# Called by the judge 
+# Supposed to return res if pass, or None on failure
+# However just returns the encrypted comarison reslt...
 def verify_eval(P_eval, plaintext_and_coins, \
                 n1, n2, sound_param=16):
     if len(P_eval) != 7:
