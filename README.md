@@ -16,7 +16,9 @@ Comment or uncomment tests in the files above, as needed.
 # Benchmark:
 
 The runtime of the auction is O(s^2) where s is the number of suppliers.  
-With 5 suppliers, the auction takes about 4 minutes.
+With 5 suppliers, the auction takes about 4 minutes.  
+Using 20-bit int price reduces the auction time to about 3 minutes.  
+Adding some precomputation in the key distribution saves another ~5 seconds.
 
 # Pitfalls:
 proof_eval and verify_eval are executed, but they don't actually work against malicious adversaries.
