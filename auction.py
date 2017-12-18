@@ -1,5 +1,6 @@
 import gmpy2
 import Crypto.Random.random as random
+import time
 from gmpy2 import mpz, powmod
 from GM import generate_keys, encrypt_gm, decrypt_gm, INT_LEN
 from proofs import proof_dlog_eq, verify_dlog_eq, proof_eval, verify_eval, \
@@ -158,9 +159,10 @@ class Supplier(object):
         
         secret = encrypt_gm(share, n_i)
         self.blockchain.upload_keyshare(self.sid, to_sid, secret)
-        
-    def distribute_key(self, cheat = False):
-        # TODO: implement Shamir's secret share...
+            
+    # Precomputation
+    def prep_distribute_key(self, cheat = False):
+        self.key_share = [ 0 for i in range(self.S) ]
         total = 0
         
         cheated = False
@@ -176,10 +178,22 @@ class Supplier(object):
                 if cheat and not cheated:
                     share = random.randint(0, int(self.gm_sk)) 
      
-                self.upload_share(share, i)
-            # end if
+                self.key_share[i] = share
+             # end if
         # end for              
-    # end distribute_key
+    # end prep_distribute_key
+    
+    def upload_key_shares(self):
+        for i in range(self.S):
+            self.upload_share(self.key_share[i], i)
+        # end for
+    # end upload_key_shares
+    
+    def distribute_key(self, cheat = False):
+        # TODO: implement Shamir's secret share...
+        self.prep_distribute_key(cheat = cheat)
+        self.upload_key_shares()             
+    # end distribute_key   
     
     def submit_rand_commits(self):
         for i in range(self.S):
@@ -319,12 +333,7 @@ def auction_init(total_suppliers = 2):
     return blockchain, suppliers, judge
 # auction_init
 
-def distribute_and_verify_keys(blockchain, suppliers, cheaters):
-    print "distributing keys..."
-    for s in suppliers:
-        s.distribute_key( cheat = (s.sid in cheaters) )
-    # end for
-    
+def verify_keys(blockchain, suppliers):
     print "submitting commits..."
     for s in suppliers:
         s.submit_rand_commits()
@@ -347,8 +356,75 @@ def distribute_and_verify_keys(blockchain, suppliers, cheaters):
             # end if
         # end for
     # end for
+# end verify_keys
+
+def distribute_and_verify_keys(blockchain, suppliers, cheaters):
+    print "distributing keys..."
+    for s in suppliers:
+        s.distribute_key( cheat = (s.sid in cheaters) )
+    # end for
+    
+    verify_keys(blockchain, suppliers)
     print "key distribution and verification done."
 # end distribute_and_verify_keys
+
+def run_auction_with_prep(price):
+    print "Precomputing..."
+    time0_sec = time.time()
+    blockchain, suppliers, judge = auction_init(total_suppliers = len(price))
+    
+    for s in suppliers:
+        s.prep_distribute_key()
+    # end for
+    
+    print "Precomputation ended"
+    time1_sec = time.time()
+    print "time used in precomputation: " + str(time1_sec - time0_sec) + " seconds"
+    print "auction begins, price =", price
+    
+    print "uploading key shares..."
+    for s in suppliers:
+        s.upload_key_shares()
+    # end for
+    
+    verify_keys(blockchain, suppliers)
+    print "key distribution and verification done."
+    
+    print "committing bids..."
+    # commit bids
+    for i in range(len(suppliers)):
+        suppliers[i].commit_bid(price[i])
+    # end for
+    
+    print "generating proofEval..."
+    # generate compare proof
+    for i in range(len(suppliers)):
+        for j in range(len(suppliers)):
+            if j != i:
+                suppliers[i].compare_eval(j)
+            # end if
+        # end for
+    # end for
+        
+    print "decrypting res..."
+    # decrypt comparison result    
+    for s in suppliers:
+        s.decrypt_all_cmp_res()
+    # end for
+    
+    blockchain.determine_winner()
+    print "winner is:", blockchain.winner
+    if blockchain.winner:
+        print "winner's bid:", price[blockchain.winner]
+        
+        assert [ price[blockchain.winner] == min(price) ]
+    # end if
+    
+    time2_sec = time.time()
+    print "time used in after auction started: " + str(time2_sec - time1_sec) + " seconds"
+    return blockchain.winner
+   
+# end run_auction_with_prep
 
 def run_auction(price):
     print "auction begins, price =", price
@@ -379,7 +455,7 @@ def run_auction(price):
     # end for
     
     blockchain.determine_winner()
-    print "print: winner is:", blockchain.winner
+    print "winner is:", blockchain.winner
     if blockchain.winner:
         print "winner's bid:", price[blockchain.winner]
         
@@ -427,7 +503,10 @@ def test_auction():
         run_auction([random.randint(0, 2**INT_LEN - 1) \
                      for i in range(total_suppliers)])
                      
-    auction(5)
+    def auction_prep(total_suppliers):
+        run_auction_with_prep([random.randint(0, 2**INT_LEN - 1) \
+                     for i in range(total_suppliers)])             
+    auction_prep(5)
                  
 test_auction()   
                    
