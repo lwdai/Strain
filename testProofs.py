@@ -1,7 +1,7 @@
 import gmpy2
 import Crypto.Random.random as random
 from gmpy2 import mpz, powmod
-from GM import generate_keys, encrypt_gm
+from GM import generate_keys, encrypt_gm, INT_LEN
 from proofs import gm_eval_honest, compare_leq_honest, proof_dlog_eq, \
     verify_dlog_eq, proof_eval, verify_eval
 
@@ -13,8 +13,8 @@ def test_gm_eval_honest(iters=1):
     
     for i in range(iters):
         
-        v1 = mpz(random.randint(0, 2**31-1))
-        v2 = mpz(random.randint(0, 2**31-1))
+        v1 = mpz(random.randint(0, 2**INT_LEN-1))
+        v2 = mpz(random.randint(0, 2**INT_LEN-1))
         print 'i=',i,'v1=', v1, 'v2=',v2
         cipher2 = encrypt_gm(v2, n)
         
@@ -37,10 +37,10 @@ def test_proof_eval(iters=1):
     print "test honest model"
     for i in range(iters):
         print "i =", i
-        v1 = mpz(random.randint(0, 2**31-1))
+        v1 = mpz(random.randint(0, 2**INT_LEN-1))
         C1 = encrypt_gm(v1, n1)
 
-        v2 = mpz(random.randint(0, 2**31-1))
+        v2 = mpz(random.randint(0, 2**INT_LEN-1))
         C2 = encrypt_gm(v2, n2)
     
         C12 = encrypt_gm(v1, n2)

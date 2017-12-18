@@ -4,7 +4,7 @@ from gmpy2 import mpz,jacobi
 from Crypto.Util.number import getStrongPrime
 from GM import generate_keys, encrypt_bit_gm, encrypt_gm, decrypt_bit_gm,\
     decrypt_gm, encrypt_bit_and, decrypt_bit_and, dot_mod, \
-    embed_bit_and, embed_and
+    embed_bit_and, embed_and, int_to_bin, INT_LEN
     
 def test_gen_keys(iters = 1):
     print "test_gen_keys:"
@@ -26,7 +26,7 @@ def test_gm_enc_dec(iters = 1):
     p, q = keys['priv']    
     
     for i in range(iters):       
-        num = mpz(random.randint(0, 2**31-1))
+        num = mpz(random.randint(0, 2**INT_LEN-1))
         cipher = encrypt_gm(num, n)
         
         # ReEncryption

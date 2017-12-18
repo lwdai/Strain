@@ -1,7 +1,7 @@
 import gmpy2
 import Crypto.Random.random as random
 from gmpy2 import mpz, powmod
-from GM import generate_keys, encrypt_gm, decrypt_gm
+from GM import generate_keys, encrypt_gm, decrypt_gm, INT_LEN
 from proofs import proof_dlog_eq, verify_dlog_eq, proof_eval, verify_eval, \
                    compare_leq_honest
 
@@ -421,10 +421,10 @@ def test_auction():
     #test_key_distribution([0,1,2], num_suppliers=3)
     
     #test_key_distribution([0,3], num_suppliers=4)
-    test_key_distribution([0,3], num_suppliers=5)
+    #test_key_distribution([0,3], num_suppliers=5)
     
     def auction(total_suppliers):
-        run_auction([random.randint(0, 2**31 - 1) \
+        run_auction([random.randint(0, 2**INT_LEN - 1) \
                      for i in range(total_suppliers)])
                      
     auction(5)

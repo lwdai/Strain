@@ -1,5 +1,5 @@
 # Goldwasser-Micali Encryption and its AND variance
-# Support 32-bit unsigned integers as plaintext
+# Support 20-bit unsigned integers as plaintext
 
 import gmpy2
 import Crypto.Random.random as random
@@ -7,6 +7,7 @@ from gmpy2 import mpz, powmod, isqrt, jacobi, to_binary
 from Crypto.Util.number import getStrongPrime
 
 AND_SIZE_FACTOR = 128
+INT_LEN = 20
 
 def generate_keys(prime_size = 768):
     p = getStrongPrime(prime_size)
@@ -38,10 +39,13 @@ def encrypt_bit_gm(bit, n):
         return None
             
     return r * r * powmod(n-1, M, n) % n
+    
+def int_to_bin(mpz_number):
+    return ("{0:0" + str(INT_LEN) + "b}").format(mpz_number)
  
 # pub_key is just n       
 def encrypt_gm(mpz_number, pub_key):
-    bits_str = "{0:032b}".format(mpz_number)
+    bits_str = int_to_bin(mpz_number)
         
     return [encrypt_bit_gm(bit, pub_key) for bit in bits_str]
  
@@ -52,7 +56,7 @@ def decrypt_bit_gm(c, sk_gm, n):
     else:
         return '1'
 
-# cipher_numbers: ciphertext of a GM encrypted 32-bit unsigned int
+# cipher_numbers: ciphertext of a GM encrypted 20-bit unsigned int
 # priv_key = (p, q)            
 def decrypt_gm(cipher_numbers, priv_key):
     p, q = priv_key

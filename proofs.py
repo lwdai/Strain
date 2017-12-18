@@ -2,7 +2,8 @@ import gmpy2
 from gmpy2 import mpz, powmod, jacobi, to_binary
 import Crypto.Random.random as random
 from Crypto.Hash import SHA256
-from GM import encrypt_gm, dot_mod, embed_and, decrypt_bit_and
+from GM import encrypt_gm, dot_mod, embed_and, decrypt_bit_and, INT_LEN, \
+    int_to_bin
 import collections
 
 import random as rand
@@ -11,7 +12,7 @@ import random as rand
 # Compare number1 vs number2, without revealing number1
 # The result is encrypted with pub_key2, to be decrypted later by supplier 2
 def gm_eval_honest(number1, cipher2, pub_key2):
-    assert(len(cipher2) == 32)
+    assert(len(cipher2) == INT_LEN)
     n = pub_key2
     cipher1 = encrypt_gm(number1, n)
     
@@ -24,7 +25,7 @@ def gm_eval_honest(number1, cipher2, pub_key2):
     c_neg_xor_and = embed_and(c_neg_xor, pub_key2)
     
     res = [ ]
-    for l in range(32):
+    for l in range(INT_LEN):
         temp = dot_mod(cipher2_and[l], neg_cipher1_and[l], n)        
         for u in range(l):
             temp = dot_mod(temp, c_neg_xor_and[u], n)
@@ -83,49 +84,49 @@ def hash_flat(numList):
 # However the theory doesn't work    
 def proof_eval(cipher1, cipher2, cipher12, number1, \
                pub_key1, pub_key2, sound_param=16):
-    assert(len(cipher1) == 32)
-    assert(len(cipher2) == 32)
+    assert(len(cipher1) == INT_LEN)
+    assert(len(cipher2) == INT_LEN)
     
-    bits_v = "{0:032b}".format(number1)   
+    bits_v = int_to_bin(number1)   
     
     coins_delta = [ [ random.randint(0,1) for m in range(sound_param) ] \
-                      for l in range(32) ]
+                      for l in range(INT_LEN) ]
                       
     coins_gamma = [ [ mpz(random.randint(0, int(pub_key1-1))) \
                       for m in range(sound_param) ] \
-                      for l in range(32) ]
+                      for l in range(INT_LEN) ]
                       
     coins_gamma2 = [ [ mpz(random.randint(0, int(pub_key2-1))) \
                        for m in range(sound_param) ] \
-                       for l in range(32) ]
+                       for l in range(INT_LEN) ]
                       
     coins_GAMMA = [ [ mpz(random.randint(0, int(pub_key1-1))) \
                       for m in range(sound_param) ] \
-                      for l in range(32) ]
+                      for l in range(INT_LEN) ]
                       
     coins_GAMMA2 = [ [ mpz(random.randint(0, int(pub_key2-1))) \
                        for m in range(sound_param) ] \
-                       for l in range(32) ]
+                       for l in range(INT_LEN) ]
                          
     gamma = [ [encrypt_bit_gm_coin(coins_delta[l][m] , \
                                    pub_key1, \
                                    coins_gamma[l][m]) \
-               for m in range(sound_param) ] for l in range(32) ]
+               for m in range(sound_param) ] for l in range(INT_LEN) ]
                
     gamma2 = [ [encrypt_bit_gm_coin(coins_delta[l][m] , \
                                     pub_key2, \
                                     coins_gamma2[l][m]) \
-                for m in range(sound_param) ] for l in range(32) ]
+                for m in range(sound_param) ] for l in range(INT_LEN) ]
                
     GAMMA = [ [encrypt_bit_gm_coin(coins_delta[l][m] ^ int(bits_v[l]), \
                                    pub_key1, \
                                    coins_GAMMA[l][m] ) \
-               for m in range(sound_param) ] for l in range(32) ]
+               for m in range(sound_param) ] for l in range(INT_LEN) ]
                
     GAMMA2 = [ [encrypt_bit_gm_coin(coins_delta[l][m] ^ int(bits_v[l]), \
                                     pub_key2, \
                                     coins_GAMMA2[l][m]) \
-               for m in range(sound_param) ] for l in range(32) ]
+               for m in range(sound_param) ] for l in range(INT_LEN) ]
                
     P_eval = [ gamma, gamma2, GAMMA, GAMMA2, cipher1, cipher2, cipher12 ]
     
@@ -135,7 +136,7 @@ def proof_eval(cipher1, cipher2, cipher12, number1, \
     rand.seed(h)
     
     b_coins = [ [ rand.randint(0,1) for m in range(sound_param) ] \
-                            for l in range(32) ]
+                            for l in range(INT_LEN) ]
                             
     def gamma_or_GAMMA(l, m, rand_gen=rand):
         if rand_gen.randint(0,1) == 0:
@@ -151,7 +152,7 @@ def proof_eval(cipher1, cipher2, cipher12, number1, \
     
     plaintext_and_coins = [ [ gamma_or_GAMMA(l, m) \
                               for m in range(sound_param) ] \
-                              for l in range(32) ]
+                              for l in range(INT_LEN) ]
                                                                
     return P_eval, plaintext_and_coins                  
 # end proof_eval                      
@@ -168,7 +169,7 @@ def verify_eval(P_eval, plaintext_and_coins, \
     
     # use assert for now..
     for x in P_eval:
-        assert(len(x) == 32)
+        assert(len(x) == INT_LEN)
         
     # Doesn't work... 
     # Just do the comparison
@@ -230,7 +231,7 @@ def verify_eval(P_eval, plaintext_and_coins, \
     c_neg_xor_and = embed_and(c_neg_xor, n2)
     
     res = [ ]
-    for l in range(32):
+    for l in range(INT_LEN):
         temp = dot_mod(cipher2_and[l], neg_cipher1_and[l], n2)        
         for u in range(l):
             temp = dot_mod(temp, c_neg_xor_and[u], n2)
